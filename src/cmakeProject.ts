@@ -2318,7 +2318,7 @@ export class CMakeProject {
      * The target that will be built with a regular build invocation
      */
     public get defaultBuildTarget(): string | null {
-        return this.workspaceContext.state.getDefaultBuildTarget(this.folderName, this.isMultiProjectFolder);
+        return this.targetName.value === this.initTargetName ? this.workspaceContext.state.getDefaultBuildTarget(this.folderName, this.isMultiProjectFolder) : this.targetName.value;
     }
     private async setDefaultBuildTarget(v: string) {
         await this.workspaceContext.state.setDefaultBuildTarget(this.folderName, v, this.isMultiProjectFolder);
