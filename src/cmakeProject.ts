@@ -733,6 +733,11 @@ export class CMakeProject {
         return this.shutDownCMakeDriver();
     });
 
+    private readonly sourceDirectorySub = this.workspaceContext.config.onChange('sourceDirectory', async () => {
+        log.info(localize("source.directory.changed.restart.driver", "Restarting the CMake driver after a source directory change."));
+        await this.shutDownCMakeDriver();
+    });
+
     private readonly generatorSub = this.workspaceContext.config.onChange('generator', async () => {
         log.info(localize('generator.changed.restart.driver', "Restarting the CMake driver after a generator change."));
         await this.reloadCMakeDriver();
@@ -794,6 +799,7 @@ export class CMakeProject {
         this.termCloseSub.dispose();
         this.launchTerminals.forEach(term => term.dispose());
         for (const sub of [
+            this.sourceDirectorySub,
             this.generatorSub,
             this.preferredGeneratorsSub,
             this.communicationModeSub,
@@ -1538,6 +1544,9 @@ export class CMakeProject {
 
     async configureInternal(trigger: ConfigureTrigger = ConfigureTrigger.api, extraArgs: string[] = [], type: ConfigureType = ConfigureType.Normal, debuggerInformation?: DebuggerInformation): Promise<ConfigureResult> {
         const drv: CMakeDriver | null = await this.getCMakeDriverInstance();
+
+        // TODO: Maybe we need to check for the existence of file here?
+
         // Don't show a progress bar when the extension is using Cache for configuration.
         // Using cache for configuration happens only one time.
         if (drv && drv.shouldUseCachedConfiguration(trigger)) {
