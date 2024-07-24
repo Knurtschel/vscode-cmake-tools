@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 import { ConfigurationReader } from '@cmt/config';
 import paths from '@cmt/paths';
 import { StateManager } from '@cmt/state';
+import { Environment } from './environmentVariables';
 
 /**
  * State attached to a directory in a workspace. Contains a config object and
@@ -43,8 +44,8 @@ export class DirectoryContext {
      * be used over `ConfigurationReader.cmakePath` because it will do additional
      * path expansion and searching.
      */
-    getCMakePath(overWriteCMakePathSetting?: string): Promise<string | null> {
-        return paths.getCMakePath(this, overWriteCMakePathSetting);
+    getCMakePath(overWriteCMakePathSetting?: string, additionalEnvironment?: Environment): Promise<string | null> {
+        return paths.getCMakePath(this, overWriteCMakePathSetting, additionalEnvironment);
     }
     /**
      * The CTest executable for the directory. See `cmakePath` for more

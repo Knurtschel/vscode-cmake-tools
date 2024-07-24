@@ -749,6 +749,7 @@ export class CMakeProject {
         if (!cmakeInfo.isPresent) {
             void vscode.window.showErrorMessage(localize('bad.executable', 'Bad CMake executable: {0}. Check to make sure it is installed or the value of the {1} setting contains the correct path', `"${cmakeInfo.path}"`, '"cmake.cmakePath"'));
             telemetry.logEvent('CMakeExecutableNotFound');
+            return;
         }
 
         await this.reloadCMakeDriver();
@@ -1313,8 +1314,9 @@ export class CMakeProject {
     }
 
     async getCMakePathofProject(): Promise<string> {
+        const env = this.useCMakePresets ? undefined : this.activeKit?.environmentVariables;
         const overWriteCMakePathSetting = this.useCMakePresets ? this.configurePreset?.cmakeExecutable : undefined;
-        return await this.workspaceContext.getCMakePath(overWriteCMakePathSetting) || '';
+        return await this.workspaceContext.getCMakePath(overWriteCMakePathSetting, env) || '';
     }
 
     async getCMakeExecutable() {

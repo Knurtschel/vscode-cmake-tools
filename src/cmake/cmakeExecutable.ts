@@ -26,7 +26,7 @@ const cmakeInfo = new Map<string, CMakeExecutable>();
 
 export async function getCMakeExecutableInformation(path: string): Promise<CMakeExecutable> {
     const cmake: CMakeExecutable = {
-        path,
+        path: util.platformNormalizePath(path),
         isPresent: false,
         minimalServerModeVersion: util.parseVersion('3.7.1'),
         minimalFileApiModeVersion: util.parseVersion('3.14.0'),

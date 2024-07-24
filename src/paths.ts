@@ -11,6 +11,7 @@ import { vsInstallations } from './installs/visualStudio';
 import { expandString } from './expand';
 import { fs } from './pr';
 import * as util from '@cmt/util';
+import { Environment, EnvironmentUtils } from './environmentVariables';
 
 interface VSCMakePaths {
     cmake?: string;
@@ -248,12 +249,12 @@ class Paths {
         }
     }
 
-    async getCMakePath(wsc: DirectoryContext, overWriteCMakePathSetting?: string): Promise<string | null> {
+    async getCMakePath(wsc: DirectoryContext, overWriteCMakePathSetting?: string, additionalEnvironment?: Environment): Promise<string | null> {
         this._ninjaPath = undefined;
 
         let raw = overWriteCMakePathSetting;
         if (!raw) {
-            raw = await this.expandStringPath(wsc.config.rawCMakePath, wsc);
+            raw = await this.expandStringPath(wsc.config.rawCMakePath, wsc, additionalEnvironment);
         }
 
         if (raw === 'auto' || raw === 'cmake') {
@@ -289,7 +290,7 @@ class Paths {
         return raw;
     }
 
-    async expandStringPath(raw_path: string, wsc: DirectoryContext): Promise<string> {
+    async expandStringPath(raw_path: string, wsc: DirectoryContext, additionalEnvironment?: Environment): Promise<string> {
         return expandString(raw_path, {
             vars: {
                 buildKit: '${buildKit}',
@@ -310,7 +311,8 @@ class Paths {
                 workspaceHash: util.makeHashString(wsc.folder.uri.fsPath),
                 workspaceRoot: wsc.folder.uri.fsPath,
                 workspaceRootFolderName: path.basename(wsc.folder.uri.fsPath)
-            }
+            },
+            envOverride: EnvironmentUtils.merge([process.env, wsc.config.environment, additionalEnvironment])
         });
     }
 

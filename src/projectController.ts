@@ -127,6 +127,8 @@ export class ProjectController implements vscode.Disposable {
 
     async setActiveProject(project?: CMakeProject, options?: OptionConfig): Promise<void> {
         this.activeProject = project;
+        // Call this to check cmake executable information and update status.
+        await this.activeProject?.getCMakeExecutable();
         void this.updateUsePresetsState(this.activeProject);
         await this.projectStatus.updateActiveProject(project, options);
         await this.setupProjectSubscriptions(project);

@@ -45,7 +45,6 @@ import { ProjectStatus } from './projectStatus';
 import { PinnedCommands } from './pinnedCommands';
 import { StatusBar } from '@cmt/status';
 import { DebugAdapterNamedPipeServerDescriptorFactory } from './debug/debugAdapterNamedPipeServerDescriptorFactory';
-import { getCMakeExecutableInformation } from './cmake/cmakeExecutable';
 import { DebuggerInformation, getDebuggerPipeName } from './debug/debuggerConfigureDriver';
 import { DebugConfigurationProvider, DynamicDebugConfigurationProvider } from './debug/debugConfigurationProvider';
 import { deIntegrateTestExplorer } from './ctest';
@@ -120,14 +119,6 @@ export class ExtensionManager implements vscode.Disposable {
     public async init() {
         this.updateTouchBarVisibility(this.workspaceConfig.touchbar);
         this.workspaceConfig.onChange('touchbar', config => this.updateTouchBarVisibility(config));
-
-        let cmakePath = this.workspaceConfig.rawCMakePath;
-        if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0]) {
-            const workspaceContext = DirectoryContext.createForDirectory(vscode.workspace.workspaceFolders[0], new StateManager(this.extensionContext, vscode.workspace.workspaceFolders[0]));
-            cmakePath = await workspaceContext.getCMakePath() || '';
-        }
-        // initialize the state of the cmake exe
-        await getCMakeExecutableInformation(cmakePath);
 
         await util.setContextValue("cmake:testExplorerIntegrationEnabled", this.workspaceConfig.testExplorerIntegrationEnabled);
         this.workspaceConfig.onChange("ctest", async (value) => {
@@ -962,7 +953,7 @@ export class ExtensionManager implements vscode.Disposable {
             return;
         }
         const workspaceContext = DirectoryContext.createForDirectory(vscode.workspace.workspaceFolders[0], new StateManager(this.extensionContext, vscode.workspace.workspaceFolders[0]));
-        const cmakePath: string = await workspaceContext.getCMakePath() || '';
+        const cmakePath: string = (await this.getActiveProject()?.getCMakePathofProject()) ?? (await workspaceContext.getCMakePath() || '');
         const duplicateRemoved = await KitsController.scanForKits(cmakePath);
         if (duplicateRemoved) {
             // Check each project. If there is an active kit set and if it is of the old definition, unset the kit.
