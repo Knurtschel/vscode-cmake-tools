@@ -36,7 +36,7 @@ import { fs } from './pr';
 import { buildCmdStr, DebuggerEnvironmentVariable, ExecutionResult, ExecutionOptions } from './proc';
 import { FireLate, Property } from './prop';
 import rollbar from './rollbar';
-import * as telemetry from './telemetry';
+import * as telemetry from './telemetry/telemetry';
 import { VariantManager } from './variant';
 import * as nls from 'vscode-nls';
 import { ConfigurationWebview } from './cacheView';
@@ -52,6 +52,7 @@ import { ProjectController } from './projectController';
 import { MessageItem } from 'vscode';
 import { DebugTrackerFactory, DebuggerInformation, getDebuggerPipeName } from './debug/debuggerConfigureDriver';
 import { ConfigurationType } from 'vscode-cmake-tools';
+import { TelemetryEventNames } from './telemetry/telemetryEvents';
 
 nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
@@ -761,7 +762,7 @@ export class CMakeProject {
         const cmakeInfo = await this.getCMakeExecutable();
         if (!cmakeInfo.isPresent) {
             void vscode.window.showErrorMessage(localize('bad.executable', 'Bad CMake executable: {0}. Check to make sure it is installed or the value of the {1} setting contains the correct path', `"${cmakeInfo.path}"`, '"cmake.cmakePath"'));
-            telemetry.logEvent('CMakeExecutableNotFound');
+            telemetry.logEvent(TelemetryEventNames.CMakeExecutableNotFound);
         }
 
         await this.reloadCMakeDriver();
@@ -878,9 +879,9 @@ export class CMakeProject {
                 void vscode.window.showErrorMessage(localize('no.source.directory.found', 'You do not have a source directory open'));
                 break;
             case CMakePreconditionProblems.MissingCMakeListsFile:
-                telemetryEvent = "partialActivation";
+                telemetryEvent = TelemetryEventNames.PartialActivation;
 
-                telemetry.logEvent('missingCMakeListsFile');  // Fire this event in case the notification is dismissed with the `ESC` key.
+                telemetry.logEvent(TelemetryEventNames.MissingCMakeListsFile);  // Fire this event in case the notification is dismissed with the `ESC` key.
 
                 const ignoreCMakeListsMissing: boolean = this.workspaceContext.state.getIgnoreCMakeListsMissing(this.folderName, this.isMultiProjectFolder) || this.workspaceContext.config.ignoreCMakeListsMissing;
                 telemetryProperties["ignoreCMakeListsMissing"] = ignoreCMakeListsMissing.toString();
@@ -1360,7 +1361,7 @@ export class CMakeProject {
             const cmake = await this.getCMakeExecutable();
             if (!cmake.isPresent) {
                 void vscode.window.showErrorMessage(localize('bad.executable', 'Bad CMake executable: {0}. Check to make sure it is installed or the value of the {1} setting contains the correct path', `"${cmake.path}"`, '"cmake.cmakePath"'));
-                telemetry.logEvent('CMakeExecutableNotFound');
+                telemetry.logEvent(TelemetryEventNames.CMakeExecutableNotFound);
                 return null;
             }
 
@@ -2777,7 +2778,7 @@ export class CMakeProject {
             debugger: dbg
         };
 
-        telemetry.logEvent('debug', telemetryProperties);
+        telemetry.logEvent(TelemetryEventNames.Debug, telemetryProperties);
 
         await vscode.debug.startDebugging(this.workspaceFolder, debugConfig);
         return vscode.debug.activeDebugSession!;
@@ -3261,7 +3262,7 @@ export class CMakeProject {
         }
 
         if (fileType) {
-            telemetry.logEvent("cmakeFileWrite", { filetype: fileType, outsideActiveFolder: outside.toString() });
+            telemetry.logEvent(TelemetryEventNames.CMakeFileWrite, { filetype: fileType, outsideActiveFolder: outside.toString() });
         }
     }
 

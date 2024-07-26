@@ -7,11 +7,12 @@
 import * as logging from '@cmt/logging';
 import * as util from '@cmt/util';
 import * as os from 'os';
-import * as telemetry from '@cmt/telemetry';
+import * as telemetry from '@cmt/telemetry/telemetry';
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
 import { CppDebugConfiguration } from './debugger';
 import { Environment } from './environmentVariables';
+import { TelemetryEventNames } from './telemetry/telemetryEvents';
 
 nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
@@ -260,7 +261,7 @@ export class ConfigurationReader implements vscode.Disposable {
                         isSet: updatedKeys.join(";")
                     };
 
-                    telemetry.logEvent("settings", telemetryProperties);
+                    telemetry.logEvent(TelemetryEventNames.Settings, telemetryProperties);
                 }
             }
         });

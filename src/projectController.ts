@@ -14,12 +14,13 @@ import { CMakeDriver } from './drivers/drivers';
 import { DirectoryContext } from './workspace';
 import { StateManager } from './state';
 import { getStatusBar } from './extension';
-import * as telemetry from './telemetry';
+import * as telemetry from './telemetry/telemetry';
 import { StatusBar } from './status';
 import { FireNow } from './prop';
 import { setContextAndStore } from './extension';
 import * as ext from './extension';
 import { ProjectStatus } from './projectStatus';
+import { TelemetryEventNames } from './telemetry/telemetryEvents';
 
 nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
@@ -536,7 +537,7 @@ export class ProjectController implements vscode.Disposable {
     private async doOpenTextDocument(textDocument: vscode.TextDocument) {
         const filePath = textDocument.uri.fsPath.toLowerCase();
         if (filePath.endsWith("cmakelists.txt") || filePath.endsWith(".cmake")) {
-            telemetry.logEvent("cmakeFileOpen");
+            telemetry.logEvent(TelemetryEventNames.CMakeFileOpen);
         }
     }
 

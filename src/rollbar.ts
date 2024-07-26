@@ -5,7 +5,7 @@
 import * as logging from './logging';
 import * as nls from 'vscode-nls';
 import * as path from 'path';
-import { logEvent } from './telemetry';
+import { logEvent } from './telemetry/telemetry';
 
 nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();

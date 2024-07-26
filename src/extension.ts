@@ -30,7 +30,7 @@ import { FireNow, FireLate } from '@cmt/prop';
 import rollbar from '@cmt/rollbar';
 import { StateManager } from './state';
 import { cmakeTaskProvider, CMakeTaskProvider } from '@cmt/cmakeTaskProvider';
-import * as telemetry from '@cmt/telemetry';
+import * as telemetry from '@cmt/telemetry/telemetry';
 import { ProjectOutline, ProjectNode, TargetNode, SourceFileNode, WorkspaceFolderNode } from '@cmt/projectOutline/projectOutline';
 import * as util from '@cmt/util';
 import { ProgressHandle, DummyDisposable, reportProgress, runCommand } from '@cmt/util';
@@ -49,6 +49,7 @@ import { getCMakeExecutableInformation } from './cmake/cmakeExecutable';
 import { DebuggerInformation, getDebuggerPipeName } from './debug/debuggerConfigureDriver';
 import { DebugConfigurationProvider, DynamicDebugConfigurationProvider } from './debug/debugConfigurationProvider';
 import { deIntegrateTestExplorer } from './ctest';
+import { TelemetryEventNames } from './telemetry/telemetryEvents';
 
 nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
@@ -198,12 +199,12 @@ export class ExtensionManager implements vscode.Disposable {
 
         this.workspaceConfig.onChange('autoSelectActiveFolder', v => {
             if (this.projectController.hasMultipleProjects) {
-                telemetry.logEvent('configChanged.autoSelectActiveFolder', { autoSelectActiveFolder: `${v}` });
+                telemetry.logEvent(TelemetryEventNames.ConfigChangedAutoSelectActiveFolder, { autoSelectActiveFolder: `${v}` });
             }
             this.statusBar.setAutoSelectActiveProject(v);
         });
         this.workspaceConfig.onChange('options', v => {
-            telemetry.logEvent('configChanged.options', {
+            telemetry.logEvent(TelemetryEventNames.ConfigChangedOptions, {
                 statusBarVisibility: `${v.statusBarVisibility}`,
                 advanced_configure_projectStatusVisibility: `${v.advanced?.configure?.projectStatusVisibility}`,
                 advanced_configurePreset_statusBarVisibility: `${v.advanced?.configurePreset?.statusBarVisibility}`,
@@ -714,7 +715,7 @@ export class ExtensionManager implements vscode.Disposable {
         if (selection) {
             // Ignore if user cancelled
             await this.setActiveProject(selection);
-            telemetry.logEvent("selectactivefolder");
+            telemetry.logEvent(TelemetryEventNames.SelectActiveFolder);
             const currentActiveFolderPath = this.activeFolderPath();
             await this.extensionContext.workspaceState.update('activeFolder', currentActiveFolderPath);
         }
@@ -1056,7 +1057,7 @@ export class ExtensionManager implements vscode.Disposable {
                 type: kitSelectionType
             };
 
-            telemetry.logEvent('kitSelection', telemetryProperties);
+            telemetry.logEvent(TelemetryEventNames.KitSelection, telemetryProperties);
         }
 
         if (kitSelected) {
@@ -1281,7 +1282,7 @@ export class ExtensionManager implements vscode.Disposable {
     }
 
     cleanConfigure(folder?: vscode.WorkspaceFolder) {
-        telemetry.logEvent("deleteCacheAndReconfigure");
+        telemetry.logEvent(TelemetryEventNames.DeleteCacheAndReconfigure);
         return this.runCMakeCommand(cmakeProject => cmakeProject.cleanConfigure(ConfigureTrigger.commandCleanConfigure), folder, undefined, true);
     }
 
@@ -1298,12 +1299,12 @@ export class ExtensionManager implements vscode.Disposable {
     }
 
     cleanConfigureWithDebuggerInternal(debuggerInformation: DebuggerInformation, folder?: vscode.WorkspaceFolder) {
-        telemetry.logEvent("deleteCacheAndReconfigureWithDebugger");
+        telemetry.logEvent(TelemetryEventNames.DeleteCacheAndReconfigureWithDebugger);
         return this.runCMakeCommand(cmakeProject => cmakeProject.cleanConfigureWithDebugger(ConfigureTrigger.commandCleanConfigureWithDebugger, debuggerInformation), folder, undefined, true);
     }
 
     cleanConfigureAll() {
-        telemetry.logEvent("deleteCacheAndReconfigure");
+        telemetry.logEvent(TelemetryEventNames.DeleteCacheAndReconfigure);
         return this.runCMakeCommandForAll(cmakeProject => cmakeProject.cleanConfigure(ConfigureTrigger.commandCleanConfigureAll), undefined, true);
     }
 
@@ -1320,7 +1321,7 @@ export class ExtensionManager implements vscode.Disposable {
     }
 
     cleanConfigureAllWithDebuggerInternal(debuggerInformation: DebuggerInformation, trigger?: ConfigureTrigger) {
-        telemetry.logEvent("deleteCacheAndReconfigureWithDebugger");
+        telemetry.logEvent(TelemetryEventNames.DeleteCacheAndReconfigureWithDebugger);
         return this.runCMakeCommandForAll(cmakeProject => cmakeProject.cleanConfigureWithDebugger(trigger ?? ConfigureTrigger.commandCleanConfigureAllWithDebugger, debuggerInformation), undefined, true);
     }
 
@@ -1376,12 +1377,12 @@ export class ExtensionManager implements vscode.Disposable {
     }
 
     editCacheUI() {
-        telemetry.logEvent("editCMakeCache", { command: "editCMakeCacheUI" });
+        telemetry.logEvent(TelemetryEventNames.EditCMakeCache, { command: "editCMakeCacheUI" });
         return this.runCMakeCommand(cmakeProject => cmakeProject.editCacheUI());
     }
 
     build(folder?: vscode.WorkspaceFolder, name?: string, sourceDir?: string, showCommandOnly?: boolean, isBuildCommand?: boolean) {
-        telemetry.logEvent("build", { all: "false"});
+        telemetry.logEvent(TelemetryEventNames.Build, { all: "false"});
         return this.runCMakeCommand(cmakeProject => {
             const targets = name ? [name] : undefined;
             return cmakeProject.build(targets, showCommandOnly, (isBuildCommand === undefined) ? true : isBuildCommand);
@@ -1397,7 +1398,7 @@ export class ExtensionManager implements vscode.Disposable {
     }
 
     buildAll(name?: string | string[]) {
-        telemetry.logEvent("build", { all: "true"});
+        telemetry.logEvent(TelemetryEventNames.Build, { all: "true"});
         return this.runCMakeCommandForAll(cmakeProject => {
             const targets = util.isArrayOfString(name) ? name : util.isString(name) ? [name] : undefined;
             return cmakeProject.build(targets);
@@ -1432,42 +1433,42 @@ export class ExtensionManager implements vscode.Disposable {
     }
 
     install(folder?: vscode.WorkspaceFolder) {
-        telemetry.logEvent("install", { all: "false"});
+        telemetry.logEvent(TelemetryEventNames.Install, { all: "false"});
         return this.runCMakeCommand(cmakeProject => cmakeProject.install(), folder, undefined, true);
     }
 
     installAll() {
-        telemetry.logEvent("install", { all: "true"});
+        telemetry.logEvent(TelemetryEventNames.Install, { all: "true"});
         return this.runCMakeCommandForAll(cmakeProject => cmakeProject.install(), undefined, true);
     }
 
     editCache(folder: vscode.WorkspaceFolder) {
-        telemetry.logEvent("editCMakeCache", { command: "editCMakeCache" });
+        telemetry.logEvent(TelemetryEventNames.EditCMakeCache, { command: "editCMakeCache" });
         return this.runCMakeCommand(cmakeProject => cmakeProject.editCache(), folder);
     }
 
     clean(folder?: vscode.WorkspaceFolder) {
-        telemetry.logEvent("clean", { all: "false"});
+        telemetry.logEvent(TelemetryEventNames.Clean, { all: "false"});
         return this.build(folder, 'clean', undefined, undefined, false);
     }
 
     cleanAll() {
-        telemetry.logEvent("clean", { all: "true"});
+        telemetry.logEvent(TelemetryEventNames.Clean, { all: "true"});
         return this.buildAll(['clean']);
     }
 
     cleanRebuild(folder?: vscode.WorkspaceFolder) {
-        telemetry.logEvent("cleanRebuild", { all: "false"});
+        telemetry.logEvent(TelemetryEventNames.CleanRebuild, { all: "false"});
         return this.runCMakeCommand(cmakeProject => cmakeProject.cleanRebuild(), folder, this.ensureActiveBuildPreset, true);
     }
 
     cleanRebuildAll() {
-        telemetry.logEvent("cleanRebuild", { all: "true"});
+        telemetry.logEvent(TelemetryEventNames.CleanRebuild, { all: "true"});
         return this.runCMakeCommandForAll(cmakeProject => cmakeProject.cleanRebuild(), this.ensureActiveBuildPreset, true);
     }
 
     async buildWithTarget() {
-        telemetry.logEvent("build", { command: "buildWithTarget", all: "false"});
+        telemetry.logEvent(TelemetryEventNames.Build, { command: "buildWithTarget", all: "false"});
         this.cleanOutputChannel();
         let activeProject: CMakeProject | undefined = this.getActiveProject();
         if (!activeProject) {
@@ -1537,32 +1538,32 @@ export class ExtensionManager implements vscode.Disposable {
     }
 
     ctest(folder?: vscode.WorkspaceFolder) {
-        telemetry.logEvent("runTests", { all: "false"});
+        telemetry.logEvent(TelemetryEventNames.RunTests, { all: "false"});
         return this.runCMakeCommand(cmakeProject => cmakeProject.ctest(), folder, this.ensureActiveTestPreset);
     }
 
     ctestAll() {
-        telemetry.logEvent("runTests", { all: "true"});
+        telemetry.logEvent(TelemetryEventNames.RunTests, { all: "true"});
         return this.runCMakeCommandForAll(cmakeProject => cmakeProject.ctest(), this.ensureActiveTestPreset);
     }
 
     cpack(folder?: vscode.WorkspaceFolder) {
-        telemetry.logEvent("runCPack", { all: "false"});
+        telemetry.logEvent(TelemetryEventNames.RunCPack, { all: "false"});
         return this.runCMakeCommand(cmakeProject => cmakeProject.cpack(), folder, this.ensureActivePackagePreset);
     }
 
     cpackAll() {
-        telemetry.logEvent("runCPack", { all: "true"});
+        telemetry.logEvent(TelemetryEventNames.RunCPack, { all: "true"});
         return this.runCMakeCommandForAll(cmakeProject => cmakeProject.cpack(), this.ensureActivePackagePreset);
     }
 
     workflow(folder?: vscode.WorkspaceFolder) {
-        telemetry.logEvent("runWorkflow", { all: "false"});
+        telemetry.logEvent(TelemetryEventNames.RunWorkflow, { all: "false"});
         return this.runCMakeCommand(cmakeProject => cmakeProject.workflow(), folder, this.ensureActiveWorkflowPreset);
     }
 
     workflowAll() {
-        telemetry.logEvent("runWorkflow", { all: "true"});
+        telemetry.logEvent(TelemetryEventNames.RunWorkflow, { all: "true"});
         return this.runCMakeCommandForAll(cmakeProject => cmakeProject.workflow(), this.ensureActiveWorkflowPreset);
     }
 
@@ -1587,7 +1588,7 @@ export class ExtensionManager implements vscode.Disposable {
     }
 
     quickStart(folder?: vscode.WorkspaceFolder) {
-        telemetry.logEvent("quickStart");
+        telemetry.logEvent(TelemetryEventNames.QuickStart);
         return this.runCMakeCommandForProject(cmakeProject => cmakeProject.quickStart(folder));
     }
 
@@ -1612,7 +1613,7 @@ export class ExtensionManager implements vscode.Disposable {
     launchTargetPath(args?: FolderTargetNameArgsType) {
         const [folder, targetName] = this.resolveFolderTargetNameArgs(args);
 
-        telemetry.logEvent("substitution", { command: "launchTargetPath" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "launchTargetPath" });
         return this.queryCMakeProject(async cmakeProject => {
             if (targetName !== undefined && targetName !== null) {
                 await cmakeProject.setLaunchTargetByName(targetName);
@@ -1625,7 +1626,7 @@ export class ExtensionManager implements vscode.Disposable {
     launchTargetDirectory(args?: FolderTargetNameArgsType) {
         const [folder, targetName] = this.resolveFolderTargetNameArgs(args);
 
-        telemetry.logEvent("substitution", { command: "launchTargetDirectory" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "launchTargetDirectory" });
         return this.queryCMakeProject(async cmakeProject => {
             if (targetName !== undefined && targetName !== null) {
                 await cmakeProject.setLaunchTargetByName(targetName);
@@ -1638,7 +1639,7 @@ export class ExtensionManager implements vscode.Disposable {
     launchTargetFilename(args?: FolderTargetNameArgsType) {
         const [folder, targetName] = this.resolveFolderTargetNameArgs(args);
 
-        telemetry.logEvent("substitution", { command: "launchTargetFilename" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "launchTargetFilename" });
         return this.queryCMakeProject(async cmakeProject => {
             if (targetName !== undefined && targetName !== null) {
                 await cmakeProject.setLaunchTargetByName(targetName);
@@ -1651,7 +1652,7 @@ export class ExtensionManager implements vscode.Disposable {
     getLaunchTargetPath(args?: FolderTargetNameArgsType) {
         const [folder, targetName] = this.resolveFolderTargetNameArgs(args);
 
-        telemetry.logEvent("substitution", { command: "getLaunchTargetPath" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "getLaunchTargetPath" });
         return this.queryCMakeProject(async cmakeProject => {
             if (targetName !== undefined && targetName !== null) {
                 await cmakeProject.setLaunchTargetByName(targetName);
@@ -1664,7 +1665,7 @@ export class ExtensionManager implements vscode.Disposable {
     getLaunchTargetDirectory(args?: FolderTargetNameArgsType) {
         const [folder, targetName] = this.resolveFolderTargetNameArgs(args);
 
-        telemetry.logEvent("substitution", { command: "getLaunchTargetDirectory" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "getLaunchTargetDirectory" });
         return this.queryCMakeProject(async cmakeProject => {
             if (targetName !== undefined && targetName !== null) {
                 await cmakeProject.setLaunchTargetByName(targetName);
@@ -1677,7 +1678,7 @@ export class ExtensionManager implements vscode.Disposable {
     getLaunchTargetFilename(args?: FolderTargetNameArgsType) {
         const [folder, targetName] = this.resolveFolderTargetNameArgs(args);
 
-        telemetry.logEvent("substitution", { command: "getLaunchTargetFilename" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "getLaunchTargetFilename" });
         return this.queryCMakeProject(async cmakeProject => {
             if (targetName !== undefined && targetName !== null) {
                 await cmakeProject.setLaunchTargetByName(targetName);
@@ -1688,42 +1689,42 @@ export class ExtensionManager implements vscode.Disposable {
     }
 
     buildTargetName(folder?: vscode.WorkspaceFolder | string) {
-        telemetry.logEvent("substitution", { command: "buildTargetName" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "buildTargetName" });
         return this.queryCMakeProject(cmakeProject => cmakeProject.buildTargetName(), folder);
     }
 
     buildType(folder?: vscode.WorkspaceFolder | string) {
-        telemetry.logEvent("substitution", { command: "buildType" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "buildType" });
         return this.queryCMakeProject(cmakeProject => cmakeProject.currentBuildType(), folder);
     }
 
     buildDirectory(folder?: vscode.WorkspaceFolder | string) {
-        telemetry.logEvent("substitution", { command: "buildDirectory" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "buildDirectory" });
         return this.queryCMakeProject(cmakeProject => cmakeProject.buildDirectory(), folder);
     }
 
     buildKit(folder?: vscode.WorkspaceFolder | string) {
-        telemetry.logEvent("substitution", { command: "buildKit" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "buildKit" });
         return this.queryCMakeProject(cmakeProject => cmakeProject.buildKit(), folder);
     }
 
     executableTargets(folder?: vscode.WorkspaceFolder | string) {
-        telemetry.logEvent("substitution", { command: "executableTargets" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "executableTargets" });
         return this.queryCMakeProject(async cmakeProject => (await cmakeProject.executableTargets).map(target => target.name), folder);
     }
 
     tasksBuildCommand(folder?: vscode.WorkspaceFolder | string) {
-        telemetry.logEvent("substitution", { command: "tasksBuildCommand" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "tasksBuildCommand" });
         return this.queryCMakeProject(cmakeProject => cmakeProject.tasksBuildCommand(), folder);
     }
 
     debugTarget(folder?: vscode.WorkspaceFolder, name?: string, sourceDir?: string): Promise<vscode.DebugSession | null> {
-        telemetry.logEvent("debug", { all: "false" });
+        telemetry.logEvent(TelemetryEventNames.Debug, { all: "false" });
         return this.runCMakeCommand(cmakeProject => cmakeProject.debugTarget(name), folder, undefined, true, sourceDir);
     }
 
     async debugTargetAll(): Promise<(vscode.DebugSession | null)[]> {
-        telemetry.logEvent("debug", { all: "true" });
+        telemetry.logEvent(TelemetryEventNames.Debug, { all: "true" });
         const debugSessions: (vscode.DebugSession | null)[] = [];
         for (const cmakeProject of this.projectController.getAllCMakeProjects()) {
             debugSessions.push(await this.runCMakeCommandForProject(cmakeProject => cmakeProject.debugTarget(), cmakeProject));
@@ -1732,12 +1733,12 @@ export class ExtensionManager implements vscode.Disposable {
     }
 
     launchTarget(folder?: vscode.WorkspaceFolder, name?: string, sourceDir?: string): Promise<vscode.Terminal | null> {
-        telemetry.logEvent("launch", { all: "false" });
+        telemetry.logEvent(TelemetryEventNames.Launch, { all: "false" });
         return this.runCMakeCommand(cmakeProject => cmakeProject.launchTarget(name), folder, undefined, true, sourceDir);
     }
 
     async launchTargetAll(): Promise<(vscode.Terminal | null)[]> {
-        telemetry.logEvent("launch", { all: "true" });
+        telemetry.logEvent(TelemetryEventNames.Launch, { all: "true" });
         const terminals: (vscode.Terminal | null)[] = [];
         for (const cmakeProject of this.projectController.getAllCMakeProjects()) {
             terminals.push(await this.runCMakeCommandForProject(cmakeProject => cmakeProject.launchTarget(), cmakeProject));
@@ -1750,7 +1751,7 @@ export class ExtensionManager implements vscode.Disposable {
     }
 
     async resetState(folder?: vscode.WorkspaceFolder) {
-        telemetry.logEvent("resetExtension");
+        telemetry.logEvent(TelemetryEventNames.ResetExtension);
         if (folder) {
             await this.runCMakeCommand(cmakeProject => cmakeProject.resetState(), folder);
         } else {
@@ -1765,12 +1766,12 @@ export class ExtensionManager implements vscode.Disposable {
     }
 
     async viewLog() {
-        telemetry.logEvent("openLogFile");
+        telemetry.logEvent(TelemetryEventNames.OpenLogFile);
         await logging.showLogFile();
     }
 
     async logDiagnostics() {
-        telemetry.logEvent("logDiagnostics");
+        telemetry.logEvent(TelemetryEventNames.LogDiagnostics);
         const configurations: DiagnosticsConfiguration[] = [];
         const settings: DiagnosticsSettings[] = [];
         for (const project of this.projectController.getAllCMakeProjects()) {
@@ -1842,27 +1843,27 @@ export class ExtensionManager implements vscode.Disposable {
     }
 
     activeConfigurePresetName(): string {
-        telemetry.logEvent("substitution", { command: "activeConfigurePresetName" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "activeConfigurePresetName" });
         return this.getActiveProject()?.configurePreset?.name || '';
     }
 
     activeBuildPresetName(): string {
-        telemetry.logEvent("substitution", { command: "activeBuildPresetName" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "activeBuildPresetName" });
         return this.getActiveProject()?.buildPreset?.name || '';
     }
 
     activeTestPresetName(): string {
-        telemetry.logEvent("substitution", { command: "activeTestPresetName" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "activeTestPresetName" });
         return this.getActiveProject()?.testPreset?.name || '';
     }
 
     activePackagePresetName(): string {
-        telemetry.logEvent("substitution", { command: "activePackagePresetName" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "activePackagePresetName" });
         return this.getActiveProject()?.packagePreset?.name || '';
     }
 
     activeWorkflowPresetName(): string {
-        telemetry.logEvent("substitution", { command: "activeWorkflowPresetName" });
+        telemetry.logEvent(TelemetryEventNames.Substitution, { command: "activeWorkflowPresetName" });
         return this.getActiveProject()?.workflowPreset?.name || '';
     }
 

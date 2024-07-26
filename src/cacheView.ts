@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
 import * as nls from 'vscode-nls';
-import * as telemetry from '@cmt/telemetry';
+import * as telemetry from '@cmt/telemetry/telemetry';
 import * as util from './util';
 
 import { CacheEntryType, CMakeCache } from './cache';
 
 import * as logging from './logging';
+import { TelemetryEventNames } from './telemetry/telemetryEvents';
 const log = logging.createLogger('cache');
 
 nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
@@ -65,7 +66,7 @@ export class ConfigurationWebview {
     // Save from the UI table into the CMake cache file if there are any unsaved edits.
     async persistCacheEntries() {
         if (this.isDirty) {
-            telemetry.logEvent("editCMakeCache", { command: "saveCMakeCacheUI" });
+            telemetry.logEvent(TelemetryEventNames.EditCMakeCache, { command: "saveCMakeCacheUI" });
             await this.saveCmakeCache(this.options);
             void vscode.window.showInformationMessage(localize('cmake.cache.saved', 'CMake options have been saved.'));
             // start configure

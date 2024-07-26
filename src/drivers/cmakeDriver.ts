@@ -21,7 +21,7 @@ import paths from '@cmt/paths';
 import { fs } from '@cmt/pr';
 import * as proc from '@cmt/proc';
 import rollbar from '@cmt/rollbar';
-import * as telemetry from '@cmt/telemetry';
+import * as telemetry from '@cmt/telemetry/telemetry';
 import * as util from '@cmt/util';
 import { ConfigureArguments, VariantOption } from '@cmt/variant';
 import * as nls from 'vscode-nls';
@@ -35,6 +35,7 @@ import { CacheEntry } from '@cmt/cache';
 import { CMakeBuildRunner } from '@cmt/cmakeBuildRunner';
 import { DebuggerInformation } from '@cmt/debug/debuggerConfigureDriver';
 import { onBuildSettingsChange, onTestSettingsChange, onPackageSettingsChange } from '@cmt/ui/util';
+import { TelemetryEventNames } from '@cmt/telemetry/telemetryEvents';
 nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
 
@@ -1618,7 +1619,7 @@ export abstract class CMakeDriver implements vscode.Disposable {
                 }
             }
 
-            telemetry.logEvent('configure', telemetryProperties, telemetryMeasures);
+            telemetry.logEvent(TelemetryEventNames.Configure, telemetryProperties, telemetryMeasures);
 
             return { result: retc, resultType: ConfigureResultType.NormalOperation };
         } catch {
@@ -1773,11 +1774,11 @@ export abstract class CMakeDriver implements vscode.Disposable {
                     telemetryMeasures['ErrorCount'] = (await child.result).retc ? 1 : 0;
                 }
             }
-            telemetry.logEvent('build', telemetryProperties, telemetryMeasures);
+            telemetry.logEvent(TelemetryEventNames.Build, telemetryProperties, telemetryMeasures);
         } else {
             // Not sure what happened but there's an error...
             telemetryMeasures['ErrorCount'] = 1;
-            telemetry.logEvent('build', telemetryProperties, telemetryMeasures);
+            telemetry.logEvent(TelemetryEventNames.Build, telemetryProperties, telemetryMeasures);
             this.cmakeBuildRunner.setBuildInProgress(false);
             return -1;
         }

@@ -3,7 +3,7 @@ import * as chokidar from 'chokidar';
 import * as yaml from 'js-yaml';
 import * as json5 from 'json5';
 import * as path from 'path';
-import * as telemetry from '@cmt/telemetry';
+import * as telemetry from '@cmt/telemetry/telemetry';
 import * as vscode from 'vscode';
 
 import { ConfigurationReader } from '@cmt/config';
@@ -15,6 +15,7 @@ import { loadSchema } from './schema';
 import { StateManager } from './state';
 import * as util from './util';
 import * as nls from 'vscode-nls';
+import { TelemetryEventNames } from './telemetry/telemetryEvents';
 
 nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
@@ -407,7 +408,7 @@ export class VariantManager implements vscode.Disposable {
                     cfg?.workspaceFolderValue !== undefined).toString()
             };
 
-            telemetry.logEvent('variantSelection', telemetryProperties);
+            telemetry.logEvent(TelemetryEventNames.VariantSelection, telemetryProperties);
 
             await this.publishActiveKeywordSettings(chosen.keywordSettings);
             return true;

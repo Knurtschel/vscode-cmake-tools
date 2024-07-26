@@ -1,4 +1,5 @@
-import * as telemetry from "@cmt/telemetry";
+import * as telemetry from "@cmt/telemetry/telemetry";
+import { TelemetryEventNames } from "@cmt/telemetry/telemetryEvents";
 
 export enum DebugOrigin {
     originatedFromLaunchConfiguration = "launchConfiguration",
@@ -6,7 +7,7 @@ export enum DebugOrigin {
 }
 
 export function logCMakeDebuggerTelemetry(origin: string, debugType: string) {
-    telemetry.logEvent("cmakeDebugger", {
+    telemetry.logEvent(TelemetryEventNames.CMakeDebugger, {
         origin,
         debugType
     });

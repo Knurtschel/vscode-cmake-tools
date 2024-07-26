@@ -12,9 +12,10 @@ import { extensionManager, getActiveProject } from './extension';
 import { CMakeProject, ConfigureTrigger } from './cmakeProject';
 import * as preset from '@cmt/preset';
 import { UseCMakePresets } from './config';
-import * as telemetry from '@cmt/telemetry';
+import * as telemetry from '@cmt/telemetry/telemetry';
 import * as util from '@cmt/util';
 import * as expand from '@cmt/expand';
+import { TelemetryEventNames } from './telemetry/telemetryEvents';
 
 nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
@@ -430,7 +431,7 @@ export class CustomBuildTaskTerminal implements vscode.Pseudoterminal, proc.Outp
         if (!project || !await this.isTaskCompatibleWithPresets(project)) {
             return;
         }
-        telemetry.logEvent("task", {taskType: "configure", useCMakePresets: String(project.useCMakePresets)});
+        telemetry.logEvent(TelemetryEventNames.Task, {taskType: "configure", useCMakePresets: String(project.useCMakePresets)});
         await this.correctTargets(project, CommandType.config);
         const cmakeDriver: CMakeDriver | undefined = (await project?.getCMakeDriverInstance()) || undefined;
         if (cmakeDriver) {
@@ -468,7 +469,7 @@ export class CustomBuildTaskTerminal implements vscode.Pseudoterminal, proc.Outp
             }
         }
         if (generateLog) {
-            telemetry.logEvent("task", {taskType: commandType, useCMakePresets: String(project.useCMakePresets)});
+            telemetry.logEvent(TelemetryEventNames.Task, {taskType: commandType, useCMakePresets: String(project.useCMakePresets)});
         }
         targets = await this.correctTargets(project, commandType);
         const cmakeDriver: CMakeDriver | undefined = (await project?.getCMakeDriverInstance()) || undefined;
@@ -545,7 +546,7 @@ export class CustomBuildTaskTerminal implements vscode.Pseudoterminal, proc.Outp
         if (!project || !await this.isTaskCompatibleWithPresets(project)) {
             return;
         }
-        telemetry.logEvent("task", {taskType: "test", useCMakePresets: String(project.useCMakePresets)});
+        telemetry.logEvent(TelemetryEventNames.Task, {taskType: "test", useCMakePresets: String(project.useCMakePresets)});
         await this.correctTargets(project, CommandType.test);
         const cmakeDriver: CMakeDriver | undefined = (await project?.getCMakeDriverInstance()) || undefined;
 
@@ -583,7 +584,7 @@ export class CustomBuildTaskTerminal implements vscode.Pseudoterminal, proc.Outp
         if (!project || !await this.isTaskCompatibleWithPresets(project)) {
             return;
         }
-        telemetry.logEvent("task", {taskType: "package", useCMakePresets: String(project.useCMakePresets)});
+        telemetry.logEvent(TelemetryEventNames.Task, {taskType: "package", useCMakePresets: String(project.useCMakePresets)});
         await this.correctTargets(project, CommandType.package);
         const cmakeDriver: CMakeDriver | undefined = (await project?.getCMakeDriverInstance()) || undefined;
 
@@ -621,7 +622,7 @@ export class CustomBuildTaskTerminal implements vscode.Pseudoterminal, proc.Outp
         if (!project || !await this.isTaskCompatibleWithPresets(project)) {
             return;
         }
-        telemetry.logEvent("task", {taskType: "workflow", useCMakePresets: String(project.useCMakePresets)});
+        telemetry.logEvent(TelemetryEventNames.Task, {taskType: "workflow", useCMakePresets: String(project.useCMakePresets)});
         await this.correctTargets(project, CommandType.workflow); // ?????
         const cmakeDriver: CMakeDriver | undefined = (await project?.getCMakeDriverInstance()) || undefined;
 
@@ -657,7 +658,7 @@ export class CustomBuildTaskTerminal implements vscode.Pseudoterminal, proc.Outp
         if (!project || !await this.isTaskCompatibleWithPresets(project)) {
             return;
         }
-        telemetry.logEvent("task", {taskType: "cleanRebuild", useCMakePresets: String(project.useCMakePresets)});
+        telemetry.logEvent(TelemetryEventNames.Task, {taskType: "cleanRebuild", useCMakePresets: String(project.useCMakePresets)});
         const cleanResult = await this.runBuildTask(CommandType.clean, false, false, project);
         if (cleanResult === 0) {
             await this.runBuildTask(CommandType.build, true, false, project);
