@@ -8,6 +8,7 @@ import * as util from '../util';
 import * as vscode from 'vscode';
 import TelemetryReporter from '@vscode/extension-telemetry';
 import { getExperimentationServiceAsync, IExperimentationService, IExperimentationTelemetry, TargetPopulation } from 'vscode-tas-client';
+import { TelemetryEventNames } from './telemetryEvents';
 
 export type Properties = { [key: string]: string };
 export type Measures = { [key: string]: number };
@@ -91,7 +92,7 @@ export function sendOpenTelemetry(telemetryProperties: Properties): void {
         default:
             break;
     }
-    logEvent('open', telemetryProperties);
+    logEvent(TelemetryEventNames.Open, telemetryProperties);
 }
 
 export function getExperimentationService(): Promise<IExperimentationService | undefined> | undefined {
