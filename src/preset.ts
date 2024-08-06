@@ -1229,6 +1229,8 @@ async function expandConfigurePresetHelper(folder: string, preset: ConfigurePres
 }
 
 export async function expandConfigurePresetVariables(preset: ConfigurePreset, folder: string, name: string,  workspaceFolder: string, sourceDir: string, allowUserPreset: boolean = false, usePresetsPlusIncluded: boolean = false, errorHandler?: ExpansionErrorHandler): Promise<ConfigurePreset> {
+    // Store the keys that we need to loop over and expand in our preset environment. This is to avoid expanding every single environment variable in process.env.
+    const keysInPresetEnvironment = Object.keys(preset.environment ?? {});
 
     // Put the preset.environment on top of combined environment in the `__parentEnvironment` field.
     // If for some reason the preset.__parentEnvironment is undefined, default to process.env.
@@ -1243,7 +1245,7 @@ export async function expandConfigurePresetVariables(preset: ConfigurePreset, fo
     // Expand environment vars first since other fields may refer to them
     if (preset.environment) {
         expandedPreset.environment = EnvironmentUtils.createPreserveNull();
-        for (const key in preset.environment) {
+        for (const key of keysInPresetEnvironment) {
             if (preset.environment[key]) {
                 expandedPreset.environment[key] = await expandString(preset.environment[key]!, expansionOpts, errorHandler);
             }
