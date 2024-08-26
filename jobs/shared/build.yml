@@ -55,6 +55,17 @@ steps:
 - script: nuget restore $(Build.SourcesDirectory)\jobs\signing\SignFiles.proj -PackagesDirectory $(Build.SourcesDirectory)\jobs\signing\packages
   displayName: Restore MicroBuild Core
 - task: CmdLine@2
+  displayName: Create temporary .npmrc file
+  inputs:
+    script: |
+      echo "registry=${NPM_REGISTRY_URL}" > .npmrc
+      echo "always-auth=true" >> .npmrc
+- task: CmdLine@2
+  displayName: Update yarm lock file to use the correct registry
+  inputs:
+    script: |
+      yarn upgrade
+- task: CmdLine@2
   displayName: Build files
   inputs:
     script: |
